@@ -9,9 +9,6 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    define: {
-    'import.meta.env.VITE_GOOGLE_PLACE_API_KEY': 
-      JSON.stringify(process.env.VITE_GOOGLE_PLACE_API_KEY)
-  }
   },
+  // Environment variables are automatically exposed by Vite when prefixed with VITE_
 })

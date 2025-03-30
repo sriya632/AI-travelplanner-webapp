@@ -56,10 +56,11 @@ function CreateTrip() {
                 <div className='grid grid-cols-3 gap-5 mt-5'>
                     {SelectBudgetList.map((item, index) => (
                         <div key={index} 
-                        onClick={()=>handleInputChange('budget',item.title)}
+                        onClick={() => handleInputChange('budget', item.title)}
                         className={`p-4 rounded-lg cursor-pointer hover:shadow-lg 
-                        ${formData?.budget==item.title &&`shawdow-lg border-black`}
-                        ` }>
+                          ${formData?.budget === item.title ? 'shadow-lg border border-black' : ''}
+                        `}
+                      >
                             <h2 className='text-4xl'>{item.icon}</h2>
                             <h2 className='font-bold text-lg'>{item.title}</h2>
                             <h2 className='text-sm font-semibold text-gray-800'>{item.description}</h2>
@@ -74,8 +75,11 @@ function CreateTrip() {
                 <div className='grid grid-cols-3 gap-5 mt-5'>
                     {SelectTravelerList.map((item, index) => (
                         <div key={index} 
-                        onClick={()=>handleInputChange('traveler',item.people)}
-                        className='p-4 rounded-lg cursor-pointer hover:shadow-lg'>
+                        onClick={() => handleInputChange('traveler', item.people)}
+                        className={`p-4 rounded-lg cursor-pointer hover:shadow-lg
+                          ${formData?.traveler === item.people ? 'shadow-lg border border-black' : ''}
+                        `}
+                      >
                             <h2 className='text-4xl'>{item.icon}</h2>
                             <h2 className='font-bold text-lg'>{item.title}</h2>
                             <h2 className='text-sm font-semibold text-gray-800'>{item.description}</h2>
