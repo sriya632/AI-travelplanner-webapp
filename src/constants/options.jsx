@@ -49,4 +49,4 @@ export const SelectBudgetList=[
         description:'Costs are not a concern'
     }
 ]
-export const AI_PROMPT='Generating Travel plan based on your preferences for the Location: {location}'
+export const AI_PROMPT='Generating Travel plan based for the Location: {location}, for {totalDays} days for {traveler} traveler(s) with a budget of {budget}. Give Hotel lists according to the budget with hotelName,HotelAddress,Price,hotel image URL, geo coordinates, rating, descriptions, and also Please provide a detailed itinerary with place name,place details, place image URL, Geo coordiates, ticket pricing, time travel, rating for each day for each of the {totalDays} days. Make sure to consider the travelers interests and preferences in JSON format. The output should be in JSON format';
