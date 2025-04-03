@@ -15,15 +15,17 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog.jsx"
 import axios from 'axios';
-
-import {FcGoogle} from 'react-icons/fc';
+import { db } from '@/service/firebaseConfig.jsx';
+import { FcGoogle } from 'react-icons/fc';
 import { useGoogleLogin } from '@react-oauth/google';
-
+import { doc, setDoc } from "firebase/firestore";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 function CreateTrip() {
     const [place, setplace] = useState();
     const [openDialog, setOpenDialog] = useState(false);
     const [formData, setFormData] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const handleInputChange = (name, value) => {
 
@@ -42,13 +44,13 @@ function CreateTrip() {
         onSuccess: (codeResp) => GetUserProfile(codeResp),
         onError: (error) => console.log(error),
         flow: 'implicit', // Try using implicit flow instead
-  popup: true,
-  // Add additional scopes if needed
-  scope: 'email profile openid',
+        popup: true,
+        // Add additional scopes if needed
+        scope: 'email profile openid',
 
-}) 
+    })
 
-    
+
     const OnGenerateTrip = async () => {
 
         const user = localStorage.getItem('user');
@@ -60,6 +62,8 @@ function CreateTrip() {
             toast('Please fill all the fields');
             return;
         }
+
+        setLoading(true);
         const FINAL_PROMPT = AI_PROMPT
             .replace('{location}', formData?.location?.label || 'Unknown Location')
             .replace('{totalDays}', formData?.noOfDays || '0')
@@ -67,27 +71,41 @@ function CreateTrip() {
             .replace('{budget}', formData?.budget || 'Budget friendly')
             .replace('{totalDays}', formData?.noOfDays || '0')
 
-        console.log(FINAL_PROMPT);
+
 
         const result = await chatSession.sendMessage(FINAL_PROMPT);
 
         console.log(result?.response?.text());
+        setLoading(false);
+        SaveAiTrip(result?.response?.text())
 
     }
+    const SaveAiTrip = async (TripData) => {
+        setLoading(true);
+        const user = JSON.parse(localStorage.getItem('user'));
+        const docId = Date.now().toString(); // Unique ID for the document
+        await setDoc(doc(db, "AITrips", docId), {
+            userSelection: formData,
+            tripData: JSON.parse(TripData),
+            userEmail: user?.email || "unknown", // Store user email if available
+            id: docId,
+        });
+        setLoading(false);
 
+    }
     const GetUserProfile = (tokenInfo) => {
-        axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenInfo?.access_token}`,{
-        headers:{
-            Authorization:`Bearer ${tokenInfo?.access_token}`,
-            Accept:'Application/json'
-        }
-    }).then((resp)=>{
-        console.log(resp);
-        localStorage.setItem('user', JSON.stringify(resp.data));
-        setOpenDialog(false); // Close the dialog after successful login
-        OnGenerateTrip(); // Call the function to generate trip after successful login
-    })
-}
+        axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenInfo?.access_token}`, {
+            headers: {
+                Authorization: `Bearer ${tokenInfo?.access_token}`,
+                Accept: 'Application/json'
+            }
+        }).then((resp) => {
+            console.log(resp);
+            localStorage.setItem('user', JSON.stringify(resp.data));
+            setOpenDialog(false); // Close the dialog after successful login
+            OnGenerateTrip(); // Call the function to generate trip after successful login
+        })
+    }
     return (
         <div className='sm:px-10 md:px-32 lg:px-56 px-5 mt-10'>
             <h2 className='font-bold text-3xl'>Tell us your travel preferences</h2>
@@ -156,7 +174,12 @@ function CreateTrip() {
             </div>
 
             <div className='my-10 flex justify-end'>
-                <Button onClick={OnGenerateTrip}>Generate Trip</Button>
+                <Button
+                    disabled={loading}
+                    onClick={OnGenerateTrip}>
+                    {loading ? <AiOutlineLoading3Quarters className={`h-7 w-7 animate-spin`} /> : 'Generate Trip'
+                    }
+                    </Button>
             </div>
 
             <Dialog open={openDialog}>
@@ -171,7 +194,7 @@ function CreateTrip() {
                                 <h2 className='font-bold text-lg mt-7'>Log In or Sign Up with google</h2>
                                 <p>Sign in with google authentication securely</p>
                                 <Button onClick={login}
-                                className='w-full mt-5 flex gap-4 items-center'> <FcGoogle />Sign in with Google</Button>
+                                    className='w-full mt-5 flex gap-4 items-center'> <FcGoogle />Sign in with Google </Button>
                             </div>
                         </DialogDescription>
                     </DialogHeader>
