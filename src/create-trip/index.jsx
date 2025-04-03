@@ -6,12 +6,23 @@ import { SelectTravelerList } from "../constants/options.jsx";
 import { Button } from '@/components/ui/button.jsx';
 import { toast } from 'sonner';
 import { chatSession } from '@/service/aimodel.jsx';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog.jsx"
+import axios from 'axios';
 
-
+import {FcGoogle} from 'react-icons/fc';
+import { useGoogleLogin } from '@react-oauth/google';
 
 
 function CreateTrip() {
     const [place, setplace] = useState();
+    const [openDialog, setOpenDialog] = useState(false);
     const [formData, setFormData] = useState([]);
 
     const handleInputChange = (name, value) => {
@@ -27,30 +38,60 @@ function CreateTrip() {
         console.log(formData)
     }, [formData])
 
-    const OnGenerateTrip = async() => {
+    const login = useGoogleLogin({
+        onSuccess: (codeResp) => GetUserProfile(codeResp),
+        onError: (error) => console.log(error),
+        flow: 'implicit', // Try using implicit flow instead
+  popup: true,
+  // Add additional scopes if needed
+  scope: 'email profile openid',
+
+}) 
+
+    
+    const OnGenerateTrip = async () => {
+
+        const user = localStorage.getItem('user');
+        if (!user) {
+            setOpenDialog(true);
+            return;
+        }
         if (formData?.noOfDays > 10 && !formData?.location || !formData?.budget || !formData?.traveler) {
             toast('Please fill all the fields');
             return;
         }
-        const FINAL_PROMPT=AI_PROMPT
-        .replace('{location}', formData?.location?.label || 'Unknown Location')
-        .replace('{totalDays}', formData?.noOfDays || '0')
-        .replace('{traveler}', formData?.traveler || '1')
-        .replace('{budget}', formData?.budget || 'Budget friendly')
-        .replace('{totalDays}', formData?.noOfDays || '0')
+        const FINAL_PROMPT = AI_PROMPT
+            .replace('{location}', formData?.location?.label || 'Unknown Location')
+            .replace('{totalDays}', formData?.noOfDays || '0')
+            .replace('{traveler}', formData?.traveler || '1')
+            .replace('{budget}', formData?.budget || 'Budget friendly')
+            .replace('{totalDays}', formData?.noOfDays || '0')
 
-        console.log( FINAL_PROMPT);
+        console.log(FINAL_PROMPT);
 
-        const result= await chatSession.sendMessage(FINAL_PROMPT);
+        const result = await chatSession.sendMessage(FINAL_PROMPT);
 
         console.log(result?.response?.text());
 
     }
 
+    const GetUserProfile = (tokenInfo) => {
+        axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenInfo?.access_token}`,{
+        headers:{
+            Authorization:`Bearer ${tokenInfo?.access_token}`,
+            Accept:'Application/json'
+        }
+    }).then((resp)=>{
+        console.log(resp);
+        localStorage.setItem('user', JSON.stringify(resp.data));
+        setOpenDialog(false); // Close the dialog after successful login
+        OnGenerateTrip(); // Call the function to generate trip after successful login
+    })
+}
     return (
         <div className='sm:px-10 md:px-32 lg:px-56 px-5 mt-10'>
             <h2 className='font-bold text-3xl'>Tell us your travel preferences</h2>
-            <p className='mt-3 text-gray-600 text-xl'>Provide the basic information asked below for your trip and we will generate a travel itenary based on that.</p>
+            <div className='mt-3 text-gray-600 text-xl'>Provide the basic information asked below for your trip and we will generate a travel itenary based on that.</div>
 
             <div>
                 <div className='mt-20 flex flex-col gap-10'>
@@ -117,6 +158,27 @@ function CreateTrip() {
             <div className='my-10 flex justify-end'>
                 <Button onClick={OnGenerateTrip}>Generate Trip</Button>
             </div>
+
+            <Dialog open={openDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <img src='/logo.png' className="h-10 w-auto my-1 mx-2 align-middle" />
+                            AI-Travel-Planner
+                        </DialogTitle>
+                        <DialogDescription asChild>
+                            <div>
+                                <h2 className='font-bold text-lg mt-7'>Log In or Sign Up with google</h2>
+                                <p>Sign in with google authentication securely</p>
+                                <Button onClick={login}
+                                className='w-full mt-5 flex gap-4 items-center'> <FcGoogle />Sign in with Google</Button>
+                            </div>
+                        </DialogDescription>
+                    </DialogHeader>
+                </DialogContent>
+            </Dialog>
+
+
         </div>
     )
 }
