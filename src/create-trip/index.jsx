@@ -20,12 +20,15 @@ import { FcGoogle } from 'react-icons/fc';
 import { useGoogleLogin } from '@react-oauth/google';
 import { doc, setDoc } from "firebase/firestore";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { useNavigate } from 'react-router-dom';
 
 function CreateTrip() {
     const [place, setplace] = useState();
     const [openDialog, setOpenDialog] = useState(false);
     const [formData, setFormData] = useState([]);
     const [loading, setLoading] = useState(false);
+
+    const navigate=useNavigate();
 
     const handleInputChange = (name, value) => {
 
@@ -91,6 +94,7 @@ function CreateTrip() {
             id: docId,
         });
         setLoading(false);
+        navigate('/view-trip/' +docId)
 
     }
     const GetUserProfile = (tokenInfo) => {
